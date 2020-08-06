@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=luci-app-myvpn
+PKG_NAME:=luci-app-myvpnconfigconfig
 PKG_VERSION=0.1
 PKG_RELEASE:=01
 
@@ -12,13 +12,13 @@ define Package/$(PKG_NAME)
     SECTION:=luci
     CATEGORY:=LuCI
     SUBMENU:=3. Applications
-    TITLE:=myvpn for LuCI
+    TITLE:=myvpnconfig for LuCI
     PKGARCH:=all
     DEPENDS:= 
 endef
 
 define Package/$(PKG_NAME)/description
-    This package contains LuCI configuration pages for myvpn.
+    This package contains LuCI configuration pages for myvpnconfig.
 endef
 
 define Build/Prepare
@@ -35,7 +35,7 @@ define Package/$(PKG_NAME)/install
 endef
 
 define Package/$(PKG_NAME)/postinst
-    /etc/init.d/myvpn start
+    /etc/init.d/myvpnconfig start
     rm -f /tmp/luci-indexcache  >/dev/null 2>&1
 endef
 
