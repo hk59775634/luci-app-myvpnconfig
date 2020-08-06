@@ -155,13 +155,19 @@ _checkmyvpn(){
 }
 
 _checkupdate(){
-	echo "check update"
+	onlinemd5=`curl -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpn/master/openwrt/md5|tail -1|awk '{print $1}'`
+	localmd5=`uci get myvpn.@myvpn[0].version`
+	if [ "$onlinemd5" = "$localmd5" ];then
+		return 1
+	else
+		return 2
+	fi
 }
 
 _upgrade(){
-	echo "upgrade"
+	sleep 5
+	return 1
 }
-
 
 _start(){
 	_checkpid
@@ -172,13 +178,9 @@ _start(){
 	done
 }
 
-
 action=$1
 [  -z $1 ] && action=start
 case "$action" in
-*)
-    _start
-    ;;
 stop) 
 	_stop
 	;;
@@ -188,5 +190,8 @@ checkupdate)
 upgrade) 
 	_upgrade
 	;;
+*)
+    _start
+    ;;
 esac
 

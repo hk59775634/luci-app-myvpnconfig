@@ -113,15 +113,23 @@ subnets = s:taboption("advanced", DynamicList, "subnets", translate("Local subne
 	translate("Filter the intranet address. The address listed will not be forwarded by VPN server."))
 subnets.datatype = "ipaddr"
 
-checkupdate = s:taboption("advanced", Button, "checkupdate", translate("升级检测")) 
-    checkupdate.inputtitle = translate("开始检测")
-    checkupdate.inputstyle = "apply"
-checkupdate.write = function(self, section)
-	if luci.sys.call("/usr/sbin/myvpn checkupdate > /dev/null ") == 0 then
-		checkapi = s:taboption("advanced", DummyValue, "checkapi", translate("检测认证服务器:"), translate("<font color=#378a00>认证服务器连接成功.</font>"))
+
+if luci.sys.call("/usr/sbin/myvpn checkupdate > /dev/null ") == 1 then
+	version = s:taboption("advanced", DummyValue, "version", translate("版本信息:"), translate("<font color=#378a00>未发现新版本.</font>"))
+else
+	version = s:taboption("advanced", DummyValue, "version", translate("版本信息:"), translate("<font color=#378a00>发现新版本.</font>"))
+		checkupdate = s:taboption("advanced", Button, "checkupdate", translate("版本升级")) 
+		checkupdate.inputtitle = translate("开始升级")
+		checkupdate.inputstyle = "apply"
+	checkupdate.write = function(self, section)
+		if luci.sys.call("/usr/sbin/myvpn upgrade > /dev/null ") == 1 then
+			updatend = s:taboption("advanced", DummyValue, "version", translate("更新完成:"), translate("<font color=#378a00>更新完成后建议重启设备.</font>"))
+		else
+			updatend = s:taboption("advanced", DummyValue, "version", translate("更新失败:"), translate("<font color=#378a00>请再次更新或稍后再试.</font>"))
+		end
 	end
-	
 end
+
 
 
 --route
