@@ -179,10 +179,10 @@ _checkupdate(){
 }
 
 _upgrade(){
-	onlinemd5=`curl -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/openwrt/md5|tail -1|awk '{print $1}'`
-	onlineipk=`curl -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/openwrt/md5|tail -1|awk '{print $2}'`
+	onlinemd5=`curl -L -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/openwrt/md5|tail -1|awk '{print $1}'`
+	onlineipk=`curl -L -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/openwrt/md5|tail -1|awk '{print $2}'`
 	rm -rf /tmp/$onlineipk
-	curl -s -L -k --connect-timeout 5 https://github.com/hk59775634/luci-app-myvpnconfig/raw/master/openwrt/$onlineipk > /tmp/$onlineipk
+	curl -L -s -k --connect-timeout 5 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/openwrt/$onlineipk > /tmp/$onlineipk
 	tmpmd5=`md5sum /tmp/$onlineipk|awk '{print $1}'`
 	if [ "$onlinemd5" = "$tmpmd5" ];then
 		opkg install /tmp/$onlineipk --force-depends
