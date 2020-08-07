@@ -116,6 +116,7 @@ subnets.datatype = "ipaddr"
 
 if luci.sys.call("/usr/sbin/myvpn checkupdate > /dev/null ") == 0 then
 	version = s:taboption("advanced", DummyValue, "version", translate("版本信息:"), translate("<font color=#378a00>未发现新版本.</font>"))
+	version:depends("updatend", "")
 else
 	version = s:taboption("advanced", DummyValue, "version", translate("版本信息:"), translate("<font color=#378a00>发现新版本.</font>"))
 		checkupdate = s:taboption("advanced", Button, "checkupdate", translate("版本升级")) 
