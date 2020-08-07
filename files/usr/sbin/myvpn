@@ -187,6 +187,7 @@ _upgrade(){
 		opkg install /tmp/$onlineipk --force-depends
 		if [ "$?" = "0" ];then
 			uci set myvpn.@myvpn[0].version="$tmpmd5"
+			uci commit myvpn
 			return 0
 		else
 			return 1
