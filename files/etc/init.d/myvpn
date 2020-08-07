@@ -1,13 +1,13 @@
 #!/bin/sh /etc/rc.common
-# /init.dmyvpn
+# /etc/init.d/myvpn
 START=95
 PID=/tmp/myvpn.pid
 start(){
 	/etc/init.d/myvpn enable
-	/usr/sbin/myvpn >/dev/null 2>&1 &
+	/usr/sbin/myvpn start >/dev/null 2>&1 &
 }
 
 stop(){
-	kill -9 `cat $PID`
+	kill -9 `cat $PID` >/dev/null 2>&1
 }
 

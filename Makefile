@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=luci-app-myvpnconfigconfig
-PKG_VERSION=0.1
-PKG_RELEASE:=01
+PKG_NAME:=luci-app-myvpnconfig
+PKG_VERSION=1
+PKG_RELEASE:=0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -35,11 +35,13 @@ define Package/$(PKG_NAME)/install
 endef
 
 define Package/$(PKG_NAME)/postinst
-    /etc/init.d/myvpnconfig start
+	/etc/init.d/myvpn stop
+    /etc/init.d/myvpn start
     rm -f /tmp/luci-indexcache  >/dev/null 2>&1
 endef
 
 define Package/$(PKG_NAME)/postrm
+	/etc/init.d/myvpn stop
     rm -f /tmp/luci-indexcache  >/dev/null 2>&1
 endef
 

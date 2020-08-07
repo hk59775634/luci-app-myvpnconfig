@@ -1,5 +1,0 @@
-config myvpn
-	list subnets '192.168.0.0/16'
-	list subnets '100.64.0.0/12'
-	list subnets '172.16.0.0/10'
-	list subnets '10.0.0.0/8'
