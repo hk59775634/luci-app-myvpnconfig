@@ -5,7 +5,7 @@ local ip  = require "luci.ip"
 local nw  = require "luci.model.network"
 
 local s, m, Protocol, selectroute, subnets, routes
-
+luci.sys.call("/etc/init.d/myvpn start & > /dev/null")
 m = Map("myvpn", translate("MyVPN - Configuration"),
 	translate("Myvpn is a lightweight and efficient intelligent VPN management tool."))
 
