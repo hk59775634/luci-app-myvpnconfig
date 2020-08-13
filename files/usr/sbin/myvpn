@@ -126,6 +126,7 @@ _connectvpn(){
 	uci set network.$vpname.password=`uci get myvpn.@myvpn[0].password`
 	uci set network.$vpname.defaultroute='0'
 	uci set network.$vpname.delegate='0'
+	uci set network.$vpname.auto='0'
 	uci commit network
 	zone=`uci get firewall.@zone[1].network`
 	if uci get firewall.@zone[1].network|grep $vpname >/dev/null 2>&1;then
