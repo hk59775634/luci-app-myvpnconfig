@@ -169,6 +169,16 @@ _checkmyvpn(){
 	fi
 }
 
+_fixbrwifi(){
+	wifiuci=` cat /var/state/wireless | awk -F"." '{print $2}'`
+	wififace=`uci get wireless.$wifiuci.ifname`
+	brname=`brctl show|grep -v "bridge name"| awk '{print $1}'|grep -v $wififace `
+	brctl show |grep $wififace > /dev/null 2>&1
+	if [ "$?" != "0" ];then
+		brctl addif $brname $wififace
+	fi
+}
+
 _checkupdate(){
 	onlinemd5=`curl -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/openwrt/md5|tail -1|awk '{print $1}'`
 	localmd5=`uci get myvpn.@myvpn[0].version`
@@ -203,6 +213,7 @@ _start(){
 	_getinfo
 	while true;do
 		_checkmyvpn
+		_fixbrwifi
 	sleep 10
 	done
 }
