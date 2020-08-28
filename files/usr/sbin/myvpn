@@ -181,11 +181,15 @@ _fixbrwifi(){
 
 _checkupdate(){
 	onlinemd5=`curl -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/ipk/md5|tail -1|awk '{print $1}'`
-	localmd5=`uci get myvpn.@myvpn[0].version`
-	if [ "$onlinemd5" = "$localmd5" ];then
-		return 0
+	if [ "${#onlinemd5}" = "32" ];then
+		localmd5=`uci get myvpn.@myvpn[0].version`
+		if [ "$onlinemd5" = "$localmd5" ];then
+			return 0
+		else
+			return 1
+		fi
 	else
-		return 1
+		return 0
 	fi
 }
 
