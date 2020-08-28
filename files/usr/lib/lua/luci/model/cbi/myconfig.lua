@@ -113,14 +113,16 @@ subnets = s:taboption("advanced", DynamicList, "subnets", translate("Local subne
 	translate("Filter the intranet address. The address listed will not be forwarded by VPN server."))
 subnets.datatype = "ipaddr"
 
+update = s:taboption("advanced", Flag, "update", translate("Automatic update"), translate("If you do not want automatic updates. Please cancel the check."))
+update.default = enable.enabled
 
 if luci.sys.call("/usr/sbin/myvpn checkupdate > /dev/null ") == 0 then
-	version = s:taboption("advanced", DummyValue, "version", translate("版本信息:"), translate("<font color=#378a00>未发现新版本.</font>"))
+	version = s:taboption("advanced", DummyValue, "version", translate("Version information:"), translate("<font color=#378a00>No new version found.</font>"))
 	version:depends("updatend", "")
 else
-	version = s:taboption("advanced", DummyValue, "version", translate("版本信息:"), translate("<font color=#378a00>发现新版本.</font>"))
-		checkupdate = s:taboption("advanced", Button, "checkupdate", translate("版本升级")) 
-		checkupdate.inputtitle = translate("开始升级")
+	version = s:taboption("advanced", DummyValue, "version", translate("Version information:"), translate("<font color=#378a00>New version found.</font>"))
+		checkupdate = s:taboption("advanced", Button, "checkupdate", translate("upgrade")) 
+		checkupdate.inputtitle = translate("upgrade")
 		checkupdate.inputstyle = "apply"
 	checkupdate.write = function(self, section)
 		if luci.sys.call("/usr/sbin/myvpn upgrade > /dev/null ") == 0 then
