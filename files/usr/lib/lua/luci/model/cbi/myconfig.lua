@@ -83,7 +83,6 @@ selectroute.cfgvalue = function(self, cfg)
 	return "1"
 end
 
-
 if luci.sys.call("dnsmasq --help|grep chnroute > /dev/null") == 0 then
 	cusdns = s:taboption("general", Flag, "cusdns", translate("Use smart DNS resolution."))
 	cusdns.default = enable.enabled
@@ -126,9 +125,9 @@ else
 		checkupdate.inputstyle = "apply"
 	checkupdate.write = function(self, section)
 		if luci.sys.call("/usr/sbin/myvpn upgrade > /dev/null ") == 0 then
-			updatend = s:taboption("advanced", DummyValue, "version", translate("更新完成:"), translate("<font color=#378a00>更新完成后建议重启设备.</font>"))
+			updatend = s:taboption("advanced", DummyValue, "version", translate("Update complete:"), translate("<font color=#378a00>Restart the device after the update is complete.</font>"))
 		else
-			updatend = s:taboption("advanced", DummyValue, "version", translate("更新失败:"), translate("<font color=#378a00>请再次更新或稍后再试.</font>"))
+			updatend = s:taboption("advanced", DummyValue, "version", translate("Update failed:"), translate("<font color=#378a00>Please update again or try again later.</font>"))
 		end
 	end
 end

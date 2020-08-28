@@ -82,7 +82,10 @@ _checkroute(){
 			if [ "$routenum" -lt "5000" ];then
 				sed 's/^/ip route &/g' /etc/chnroute > /etc/quagga/zebra.conf
 				sed -i 's/$/& vpn-tochina/g' /etc/quagga/zebra.conf
-				/etc/init.d/quagga restart
+				/etc/init.d/quagga restart > /dev/null 2>&1
+				if [ "$?" != "0" ];then
+					quagga=0
+				fi
 				/etc/init.d/dnsmasq restart > /dev/null 2>&1
 			fi
 		else
@@ -90,7 +93,10 @@ _checkroute(){
 			if [ "$routenum" -lt "11300" ];then
 				sed 's/^/ip route &/g' /etc/toglobal > /etc/quagga/zebra.conf
 				sed -i 's/$/& vpn-toglobal/g' /etc/quagga/zebra.conf
-				/etc/init.d/quagga restart
+				/etc/init.d/quagga restart > /dev/null 2>&1
+				if [ "$?" != "0" ];then
+					quagga=0
+				fi
 				/etc/init.d/dnsmasq restart > /dev/null 2>&1
 			fi
 		fi
@@ -105,7 +111,7 @@ _checkroute(){
 			fi
 		else
 			routenum=`ip route|grep $NET_GATEWAY|wc -l`
-			if [ "$routenum" -lt "11300" ];then
+			if [ "$routenum" -lt "5000" ];then
 				for ip in `cat /etc/chnroute`;do
 					echo ip route add $ip $NET_GATEWAY
 				done
