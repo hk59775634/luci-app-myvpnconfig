@@ -180,7 +180,7 @@ _fixbrwifi(){
 }
 
 _checkupdate(){
-	onlinemd5=`curl -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/ipk/md5|tail -1|awk '{print $1}'`
+	onlinemd5=`curl -s -k --connect-timeout 3 https://cdn.jsdelivr.net/gh/hk59775634/luci-app-myvpnconfig/ipk/md5|tail -1|awk '{print $1}'`
 	if [ "${#onlinemd5}" = "32" ];then
 		localmd5=`uci get myvpn.@myvpn[0].version`
 		if [ "$onlinemd5" = "$localmd5" ];then
@@ -207,9 +207,9 @@ _update(){
 _upgrade(){
 	_checkupdate
 	if [ "$?" = "1" ];then
-		onlinemd5=`curl -L -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/ipk/md5|tail -1|awk '{print $1}'`
-		onlineipk=`curl -L -s -k --connect-timeout 3 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/ipk/md5|tail -1|awk '{print $2}'`
-		curl -L -s -k --connect-timeout 5 https://raw.githubusercontent.com/hk59775634/luci-app-myvpnconfig/master/ipk/$onlineipk > /tmp/$onlineipk
+		onlinemd5=`curl -L -s -k --connect-timeout 3 https://cdn.jsdelivr.net/gh/hk59775634/luci-app-myvpnconfig/ipk/md5|tail -1|awk '{print $1}'`
+		onlineipk=`curl -L -s -k --connect-timeout 3 https://cdn.jsdelivr.net/gh/hk59775634/luci-app-myvpnconfig/ipk/md5|tail -1|awk '{print $2}'`
+		curl -L -s -k --connect-timeout 5 https://cdn.jsdelivr.net/gh/hk59775634/luci-app-myvpnconfig/ipk/$onlineipk > /tmp/$onlineipk
 		tmpmd5=`md5sum /tmp/$onlineipk|awk '{print $1}'`
 		if [ "$onlinemd5" = "$tmpmd5" ];then
 			opkg install /tmp/$onlineipk --force-depends
