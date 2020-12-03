@@ -50,6 +50,13 @@ _getinfo(){
 }
 
 _checkdnsmasq(){
+	network_find_wan NET_IF
+	network_get_ipaddr NET_IP "${NET_IF}"
+	#echo wan ip is $NET_IP
+	network_get_dnsserver NET_DNS "${NET_IF}"
+	if [ "$NET_DNS" = "" ];then
+		NET_DNS=119.29.29.29
+	fi
 	if [ "$dnsmasq" = "1" ];then
 cat>/tmp/dnsmasq.tmp<<EOF
 no-resolv
