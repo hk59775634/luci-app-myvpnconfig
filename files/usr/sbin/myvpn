@@ -132,7 +132,7 @@ _get_dn_ip(){
 	vpnserver=$(echo $1)
 	dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name='$vpnserver'&type=A')
 	if [ "$dns_info" = "" ];then
-		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'http://43.226.148.222/dns-query?name='$vpnserver'&type=A')
+		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'http://43.226.148.222:8088/dns-query?name='$vpnserver'&type=A')
 	fi
 	json_load "$dns_info"
 	json_select Answer
