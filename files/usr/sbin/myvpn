@@ -25,13 +25,13 @@ _getinfo(){
 		 uci add_list myvpn.@myvpn[0].subnets="10.0.0.0/8"
 		 uci commit myvpn
 	fi
-	echo "server=119.29.29.29" > /etc/dnsmasq.conf
+	echo "server=43.226.148.222" > /etc/dnsmasq.conf
 	/etc/init.d/dnsmasq restart > /dev/null 2>&1
 	network_find_wan NET_IF
 	network_get_ipaddr NET_IP "${NET_IF}"
 	network_get_dnsserver NET_DNS "${NET_IF}"
 	if [ "$NET_DNS" = "" ];then
-		NET_DNS=119.29.29.29
+		NET_DNS=43.226.148.222
 	fi
 	network_get_gateway NET_GATEWAY "${NET_IF}"
 	if opkg list-installed|grep quagga > /dev/null 2>&1;then
@@ -51,7 +51,7 @@ _checkdnsmasq(){
 	network_get_ipaddr NET_IP "${NET_IF}"
 	network_get_dnsserver NET_DNS "${NET_IF}"
 	if [ "$NET_DNS" = "" ];then
-		NET_DNS=119.29.29.29
+		NET_DNS=43.226.148.222
 	fi
 	if [ "$dnsmasq" = "1" ];then
 cat>/tmp/dnsmasq.tmp<<EOF
@@ -71,7 +71,7 @@ EOF
 	else
 		dnsconf=`wc -l /etc/dnsmasq.conf|awk '{print $1}'`
 		if [ "$dnsconf" -gt "1" ];then
-			echo "server=119.29.29.29" > /etc/dnsmasq.conf
+			echo "server=43.226.148.222" > /etc/dnsmasq.conf
 			/etc/init.d/dnsmasq restart > /dev/null 2>&1
 		fi
 	fi
@@ -130,18 +130,22 @@ _checkroute(){
 _get_dn_ip(){
 	. /usr/share/libubox/jshn.sh
 	vpnserver=$(echo $1)
-	dns_info=$(curl -s -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name='$vpnserver'&type=A')
-	json_load "$dns_info"
-		json_select Answer
-		json_get_keys keys
-		for k in $keys; do
-			json_select $k
-			json_get_var name name
-			json_get_var data data
+	dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name='$vpnserver'&type=A')
+	if [ "$dns_info" != "" ];then
+		json_load "$dns_info"
+			json_select Answer
+			json_get_keys keys
+			for k in $keys; do
+				json_select $k
+				json_get_var name name
+				json_get_var data data
+				json_select ..
+			done
 			json_select ..
-		done
-		json_select ..
-	echo $data
+		echo $data
+	else
+		echo 103.6.6.253
+	fi
 }
 
 _connectvpn(){
@@ -162,15 +166,13 @@ _checkvpnconnect(){
 	if [ "$vpnside" = "2" ];then
 		vpname=tochina
 		ifdown toglobal > /dev/null 2>&1
-		uci del network.toglobal > /dev/null 2>&1
-		uci commit network > /dev/null 2>&1
+		ip link del dev toglobal > /dev/null 2>&1
 	else
 		vpname=toglobal
 		uci set myvpn.@myvpn[0].selectroute=toglobal
 		uci commit myvpn
 		ifdown tochina > /dev/null 2>&1
-		uci del network.tochina > /dev/null 2>&1
-		uci commit network > /dev/null 2>&1
+		ip link del dev tochina > /dev/null 2>&1
 	fi	
 	if ifconfig $vpname >/dev/null 2>&1;then
 		_checkroute
@@ -186,12 +188,15 @@ _checkmyvpn(){
 }
 
 _fixbrwifi(){
-	wifiuci=` cat /var/state/wireless | awk -F"." '{print $2}'`
-	wififace=`uci get wireless.$wifiuci.ifname`
-	brname=`brctl show|grep -v "bridge name"| awk '{print $1}'|grep -v $wififace `
-	brctl show |grep $wififace > /dev/null 2>&1
-	if [ "$?" != "0" ];then
-		brctl addif $brname $wififace
+	cat /var/state/wireless >/dev/null 2>&1
+	if [ "$?" = "0" ];then
+		wifiuci=` cat /var/state/wireless | awk -F"." '{print $2}'`
+		wififace=`uci get wireless.$wifiuci.ifname`
+		brname=`brctl show|grep -v "bridge name"| awk '{print $1}'|grep -v $wififace `
+		brctl show |grep $wififace > /dev/null 2>&1
+		if [ "$?" != "0" ];then
+			brctl addif $brname $wififace
+		fi
 	fi
 }
 
