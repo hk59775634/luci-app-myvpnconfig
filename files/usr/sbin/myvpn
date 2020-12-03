@@ -29,14 +29,11 @@ _getinfo(){
 	/etc/init.d/dnsmasq restart > /dev/null 2>&1
 	network_find_wan NET_IF
 	network_get_ipaddr NET_IP "${NET_IF}"
-	#echo wan ip is $NET_IP
 	network_get_dnsserver NET_DNS "${NET_IF}"
 	if [ "$NET_DNS" = "" ];then
-		NET_DNS=114.114.114.114
+		NET_DNS=119.29.29.29
 	fi
-	#echo wan dns is ${NET_DNS%% *}
 	network_get_gateway NET_GATEWAY "${NET_IF}"
-	#echo wan gateway ip is $NET_GATEWAY
 	if opkg list-installed|grep quagga > /dev/null 2>&1;then
 		quagga=1
 	else
@@ -52,7 +49,6 @@ _getinfo(){
 _checkdnsmasq(){
 	network_find_wan NET_IF
 	network_get_ipaddr NET_IP "${NET_IF}"
-	#echo wan ip is $NET_IP
 	network_get_dnsserver NET_DNS "${NET_IF}"
 	if [ "$NET_DNS" = "" ];then
 		NET_DNS=119.29.29.29
@@ -85,10 +81,10 @@ EOF
 _checkroute(){
 	if [ "$quagga" = "1" ];then
 		if [ "$vpnside" = "2" ];then
-			routenum=`ip route|grep vpn-tochina|wc -l`
+			routenum=`ip route|grep tochina|wc -l`
 			if [ "$routenum" -lt "5000" ];then
 				sed 's/^/ip route &/g' /etc/chnroute > /etc/quagga/zebra.conf
-				sed -i 's/$/& vpn-tochina/g' /etc/quagga/zebra.conf
+				sed -i 's/$/& tochina/g' /etc/quagga/zebra.conf
 				/etc/init.d/quagga restart > /dev/null 2>&1
 				if [ "$?" != "0" ];then
 					quagga=0
@@ -96,10 +92,10 @@ _checkroute(){
 				/etc/init.d/dnsmasq restart > /dev/null 2>&1
 			fi
 		else
-			routenum=`ip route|grep vpn-toglobal|wc -l`
+			routenum=`ip route|grep toglobal|wc -l`
 			if [ "$routenum" -lt "11300" ];then
 				sed 's/^/ip route &/g' /etc/toglobal > /etc/quagga/zebra.conf
-				sed -i 's/$/& vpn-toglobal/g' /etc/quagga/zebra.conf
+				sed -i 's/$/& toglobal/g' /etc/quagga/zebra.conf
 				/etc/init.d/quagga restart > /dev/null 2>&1
 				if [ "$?" != "0" ];then
 					quagga=0
@@ -109,10 +105,10 @@ _checkroute(){
 		fi
 	else
 		if [ "$vpnside" = "2" ];then
-			routenum=`ip route|grep vpn-tochina|wc -l`
+			routenum=`ip route|grep tochina|wc -l`
 			if [ "$routenum" -lt "5000" ];then
 				for ip in `cat /etc/chnroute`;do
-					ip route add $ip vpn-tochina
+					ip route add $ip tochina
 				done
 				/etc/init.d/dnsmasq restart > /dev/null 2>&1
 			fi
@@ -122,8 +118,8 @@ _checkroute(){
 				for ip in `cat /etc/chnroute`;do
 					echo ip route add $ip $NET_GATEWAY
 				done
-				ip route 0.0.0.0/1 vpn-toglobal
-				ip route 128.0.0.0/1 vpn-toglobal
+				ip route 0.0.0.0/1 toglobal
+				ip route 128.0.0.0/1 toglobal
 				/etc/init.d/dnsmasq restart > /dev/null 2>&1
 			fi
 		fi
@@ -131,26 +127,31 @@ _checkroute(){
 	_checkdnsmasq
 }
 
+_get_dn_ip(){
+	. /usr/share/libubox/jshn.sh
+	vpnserver=$(echo $1)
+	dns_info=$(curl -s -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name='$vpnserver'&type=A')
+	json_load "$dns_info"
+		json_select Answer
+		json_get_keys keys
+		for k in $keys; do
+			json_select $k
+			json_get_var name name
+			json_get_var data data
+			json_select ..
+		done
+		json_select ..
+	echo $data
+}
+
 _connectvpn(){
-	uci set network.$vpname=interface
-	uci set network.$vpname.proto='openconnect'
-	uci set network.$vpname.server=`uci get myvpn.@myvpn[0].server`
-	uci set network.$vpname.username=`uci get myvpn.@myvpn[0].username`
-	uci set network.$vpname.password=`uci get myvpn.@myvpn[0].password`
-	uci set network.$vpname.defaultroute='0'
-	uci set network.$vpname.delegate='0'
-	uci set network.$vpname.auto='0'
-	uci commit network
-	zone=`uci get firewall.@zone[1].network`
-	if uci get firewall.@zone[1].network|grep $vpname >/dev/null 2>&1;then
-		uci commit firewall
-	else
-		uci del firewall.@zone[1].network
-		uci set firewall.@zone[1].network="$zone $vpname"
-		uci commit firewall
-	fi
-	/etc/init.d/firewall reload
-	ifup $vpname
+	vpnserver=`uci get myvpn.@myvpn[0].server`
+	vpnserverip=$(_get_dn_ip $vpnserver)
+	vpnusername=`uci get myvpn.@myvpn[0].username`
+	vpnpassword=`uci get myvpn.@myvpn[0].password`
+	echo $vpnpassword|openconnect --interface=$vpname $vpnserver --background --resolve=$vpnserver:$vpnserverip --user=$vpnusername --script=/lib/netifd/vpnc-script-myvpn
+	iptables -I FORWARD -o $vpname -j ACCEPT
+	iptables -t nat -A POSTROUTING -o $vpname -j MASQUERADE
 }
 
 _checkvpnconnect(){
@@ -160,16 +161,18 @@ _checkvpnconnect(){
 	fi
 	if [ "$vpnside" = "2" ];then
 		vpname=tochina
-		ifdown vpn-toglobal > /dev/null 2>&1
+		ifdown toglobal > /dev/null 2>&1
 		uci del network.toglobal > /dev/null 2>&1
 		uci commit network > /dev/null 2>&1
 	else
 		vpname=toglobal
-		ifdown vpn-tochina > /dev/null 2>&1
+		uci set myvpn.@myvpn[0].selectroute=toglobal
+		uci commit myvpn
+		ifdown tochina > /dev/null 2>&1
 		uci del network.tochina > /dev/null 2>&1
 		uci commit network > /dev/null 2>&1
 	fi	
-	if ifconfig vpn-$vpname >/dev/null 2>&1;then
+	if ifconfig $vpname >/dev/null 2>&1;then
 		_checkroute
 	else
 		_connectvpn
