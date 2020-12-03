@@ -131,21 +131,20 @@ _get_dn_ip(){
 	. /usr/share/libubox/jshn.sh
 	vpnserver=$(echo $1)
 	dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name='$vpnserver'&type=A')
-	if [ "$dns_info" != "" ];then
-		json_load "$dns_info"
-			json_select Answer
-			json_get_keys keys
-			for k in $keys; do
-				json_select $k
-				json_get_var name name
-				json_get_var data data
-				json_select ..
-			done
-			json_select ..
-		echo $data
-	else
-		echo 103.6.6.253
+	if [ "$dns_info" = "" ];then
+		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'http://43.226.148.222/dns-query?name='$vpnserver'&type=A')
 	fi
+	json_load "$dns_info"
+	json_select Answer
+	json_get_keys keys
+		for k in $keys; do
+			json_select $k
+			json_get_var name name
+			json_get_var data data
+			json_select ..
+		done
+		json_select ..
+	echo $data
 }
 
 _connectvpn(){
