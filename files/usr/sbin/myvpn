@@ -184,7 +184,13 @@ _connectvpn(){
 	vpnserverip=$(_get_dn_ip $vpnserver)
 	vpnusername=`uci get myvpn.@myvpn[0].username`
 	vpnpassword=`uci get myvpn.@myvpn[0].password`
-	echo $vpnpassword|openconnect --interface=$vpname $vpnserver --background --resolve=$vpnserver:$vpnserverip --user=$vpnusername --script=/lib/netifd/vpnc-script-myvpn
+	grep $vpnserver /etc/hosts
+	if [ "$?" = "0" ];then
+		sed -i /$vpnserver/d /etc/hosts
+	fi
+	echo $vpnserverip $vpnserver >> /etc/hosts
+	
+	echo $vpnpassword|openconnect --interface=$vpname $vpnserver --background --user=$vpnusername --script=/lib/netifd/vpnc-script-myvpn
 	iptables -I FORWARD -o $vpname -j ACCEPT
 	iptables -t nat -A POSTROUTING -o $vpname -j MASQUERADE
 }
