@@ -190,7 +190,7 @@ _connectvpn(){
 	fi
 	echo $vpnserverip $vpnserver >> /etc/hosts
 	
-	echo $vpnpassword|openconnect --interface=$vpname $vpnserver --background --user=$vpnusername --script=/lib/netifd/vpnc-script-myvpn
+	echo $vpnpassword|openconnect --interface=$vpname $vpnserver --background --user=$vpnusername --script=/lib/netifd/vpnc-script-myvpn --no-cert-check
 	iptables -I FORWARD -o $vpname -j ACCEPT
 	iptables -t nat -A POSTROUTING -o $vpname -j MASQUERADE
 }
