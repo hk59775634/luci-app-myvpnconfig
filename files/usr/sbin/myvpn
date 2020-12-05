@@ -25,14 +25,14 @@ _getinfo(){
 		 uci add_list myvpn.@myvpn[0].subnets="10.0.0.0/8"
 		 uci commit myvpn
 	fi
-	echo "server=43.226.148.222" > /etc/dnsmasq.conf
-	/etc/init.d/dnsmasq restart > /dev/null 2>&1
 	network_find_wan NET_IF
 	network_get_ipaddr NET_IP "${NET_IF}"
 	network_get_dnsserver NET_DNS "${NET_IF}"
 	if [ "$NET_DNS" = "" ];then
-		NET_DNS=43.226.148.222
+		NET_DNS=114.114.114.114
 	fi
+	echo "server=${NET_DNS%% *}" > /etc/dnsmasq.conf
+	/etc/init.d/dnsmasq restart > /dev/null 2>&1
 	network_get_gateway NET_GATEWAY "${NET_IF}"
 	if opkg list-installed|grep quagga > /dev/null 2>&1;then
 		quagga=1
@@ -51,7 +51,7 @@ _checkdnsmasq(){
 	network_get_ipaddr NET_IP "${NET_IF}"
 	network_get_dnsserver NET_DNS "${NET_IF}"
 	if [ "$NET_DNS" = "" ];then
-		NET_DNS=43.226.148.222
+		NET_DNS=114.114.114.114
 	fi
 	if [ "$dnsmasq" = "1" ];then
 cat>/tmp/dnsmasq.tmp<<EOF
@@ -71,7 +71,7 @@ EOF
 	else
 		dnsconf=`wc -l /etc/dnsmasq.conf|awk '{print $1}'`
 		if [ "$dnsconf" -gt "1" ];then
-			echo "server=43.226.148.222" > /etc/dnsmasq.conf
+			echo "server=114.114.114.114" > /etc/dnsmasq.conf
 			/etc/init.d/dnsmasq restart > /dev/null 2>&1
 		fi
 	fi
@@ -84,7 +84,7 @@ _checkroute(){
 			routenum=`ip route|grep tochina|wc -l`
 			if [ "$routenum" -lt "5000" ];then
 				sed 's/^/ip route &/g' /etc/chnroute > /etc/quagga/zebra.conf
-				sed -i 's/$/& tochina/g' /etc/quagga/zebra.conf
+				sed -i 's/$/& vpn-tochina/g' /etc/quagga/zebra.conf
 				/etc/init.d/quagga restart > /dev/null 2>&1
 				if [ "$?" != "0" ];then
 					quagga=0
@@ -95,7 +95,7 @@ _checkroute(){
 			routenum=`ip route|grep toglobal|wc -l`
 			if [ "$routenum" -lt "11300" ];then
 				sed 's/^/ip route &/g' /etc/toglobal > /etc/quagga/zebra.conf
-				sed -i 's/$/& toglobal/g' /etc/quagga/zebra.conf
+				sed -i 's/$/& vpn-toglobal/g' /etc/quagga/zebra.conf
 				/etc/init.d/quagga restart > /dev/null 2>&1
 				if [ "$?" != "0" ];then
 					quagga=0
@@ -108,7 +108,7 @@ _checkroute(){
 			routenum=`ip route|grep tochina|wc -l`
 			if [ "$routenum" -lt "5000" ];then
 				for ip in `cat /etc/chnroute`;do
-					ip route add $ip tochina
+					ip route add $ip dev vpn-tochina
 				done
 				/etc/init.d/dnsmasq restart > /dev/null 2>&1
 			fi
@@ -116,10 +116,10 @@ _checkroute(){
 			routenum=`ip route|grep $NET_GATEWAY|wc -l`
 			if [ "$routenum" -lt "5000" ];then
 				for ip in `cat /etc/chnroute`;do
-					echo ip route add $ip $NET_GATEWAY
+					echo ip route add $ip via $NET_GATEWAY
 				done
-				ip route 0.0.0.0/1 toglobal
-				ip route 128.0.0.0/1 toglobal
+				ip route 0.0.0.0/1 dev vpn-toglobal
+				ip route 128.0.0.0/1 vpn-toglobal
 				/etc/init.d/dnsmasq restart > /dev/null 2>&1
 			fi
 		fi
@@ -143,22 +143,11 @@ check_ip() {
 
 _get_dn_ip(){
 	. /usr/share/libubox/jshn.sh
-	vpnserver=$(echo $1)
-	dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'http://43.226.148.222:8088/dns-query?name='$vpnserver'&type=A')
+	domain=$1
+	dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'http://178.236.45.169:8088/dns-query?name='$domain'&type=A')
 	json_load "$dns_info"
-	json_select Answer
-	json_get_keys keys
-		for k in $keys; do
-			json_select $k
-			json_get_var name name
-			json_get_var data data
-			json_select ..
-		done
-		json_select ..
-	check_ip $data
-	if [ "$?" = "1" ];then
-		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'http://43.226.148.222:8088/dns-query?name='$vpnserver'&type=A')
-		json_load "$dns_info"
+	json_get_var Status Status
+	if [ "$Status" = "0" ];then
 		json_select Answer
 		json_get_keys keys
 			for k in $keys; do
@@ -168,14 +157,25 @@ _get_dn_ip(){
 				json_select ..
 			done
 			json_select ..
-		check_ip $data
-		if [ "$?" = "1" ];then
-			echo 103.6.6.253
-		else
-			echo $data
-		fi
-	else
 		echo $data
+	else
+		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name='$domain'&type=A')
+		json_load "$dns_info"
+		json_get_var Status Status
+		if [ "$Status" = "0" ];then
+			json_select Answer
+			json_get_keys keys
+				for k in $keys; do
+					json_select $k
+					json_get_var name name
+					json_get_var data data
+					json_select ..
+				done
+				json_select ..
+			echo $data
+		else
+			resolveip $domain
+		fi
 	fi
 }
 
@@ -184,15 +184,34 @@ _connectvpn(){
 	vpnserverip=$(_get_dn_ip $vpnserver)
 	vpnusername=`uci get myvpn.@myvpn[0].username`
 	vpnpassword=`uci get myvpn.@myvpn[0].password`
+	vpnport=`uci get myvpn.@myvpn[0].port`
 	grep $vpnserver /etc/hosts
 	if [ "$?" = "0" ];then
 		sed -i /$vpnserver/d /etc/hosts
 	fi
 	echo $vpnserverip $vpnserver >> /etc/hosts
-	
-	echo $vpnpassword|openconnect --interface=$vpname $vpnserver --background --user=$vpnusername --script=/lib/netifd/vpnc-script-myvpn --no-cert-check
-	iptables -I FORWARD -o $vpname -j ACCEPT
-	iptables -t nat -A POSTROUTING -o $vpname -j MASQUERADE
+
+	uci set network.$vpname=interface
+	uci set network.$vpname.proto='openconnect'
+	uci set network.$vpname.auto='0'
+	uci set network.$vpname.delegate='0'
+	uci set network.$vpname.defaultroute='0'
+	uci set network.$vpname.port=$vpnport
+	uci set network.$vpname.username=$vpnusername
+	uci set network.$vpname.password=$vpnpassword
+	uci set network.$vpname.server=$vpnserver
+	uci commit network.$vpname
+	FIREWALL=$(uci get firewall.@zone[1].network)
+	echo $FIREWALL|grep $vpname >/dev/null
+	if [ "$?" != "0" ];then
+		echo " Add $vpname to Firewall"
+		uci set firewall.@zone[1].network="$FIREWALL $vpname"
+		uci commit firewall
+	fi
+	ifup $vpname
+	#echo $vpnpassword|openconnect --interface=$vpname $vpnserver --background --user=$vpnusername --script=/lib/netifd/vpnc-script-myvpn 
+	#iptables -I FORWARD -o $vpname -j ACCEPT
+	#iptables -t nat -A POSTROUTING -o $vpname -j MASQUERADE
 }
 
 _checkvpnconnect(){
@@ -203,15 +222,15 @@ _checkvpnconnect(){
 	if [ "$vpnside" = "2" ];then
 		vpname=tochina
 		ifdown toglobal > /dev/null 2>&1
-		ip link del dev toglobal > /dev/null 2>&1
+		ip link del dev vpn-toglobal > /dev/null 2>&1
 	else
 		vpname=toglobal
 		uci set myvpn.@myvpn[0].selectroute=toglobal
 		uci commit myvpn
 		ifdown tochina > /dev/null 2>&1
-		ip link del dev tochina > /dev/null 2>&1
+		ip link del dev vpn-tochina > /dev/null 2>&1
 	fi	
-	if ifconfig $vpname >/dev/null 2>&1;then
+	if ifconfig vpn-$vpname >/dev/null 2>&1;then
 		_checkroute
 	else
 		_connectvpn
