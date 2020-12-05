@@ -5,8 +5,8 @@ local ip  = require "luci.ip"
 local nw  = require "luci.model.network"
 
 local s, m, Protocol, selectroute, subnets, routes
-
-m = Map("myvpn", translate("MyVPN - Configuration"),
+local myvpn_version = luci.sys.exec("opkg list|grep luci-app-myvpnconfig|awk '{print $3}'")
+m = Map("myvpn", translate("MyVPN - Configuration version: " .. myvpn_version),
 	translate("Myvpn is a lightweight and efficient intelligent VPN management tool."))
 
 s = m:section(TypedSection, "myvpn")

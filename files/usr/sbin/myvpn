@@ -159,7 +159,7 @@ _get_dn_ip(){
 			json_select ..
 		echo $data
 	else
-		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name='$domain'&type=A')
+		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://1.0.0.1/dns-query?name='$domain'&type=A')
 		json_load "$dns_info"
 		json_get_var Status Status
 		if [ "$Status" = "0" ];then
