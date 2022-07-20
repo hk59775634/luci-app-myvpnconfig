@@ -79,6 +79,10 @@ EOF
 }
 
 _checkroute(){
+	for ip in `cat /etc/servers.list`;do
+		ip route add $ip via $NET_GATEWAY >/dev/null 2>&1
+	done
+	
 	if [ "$quagga" = "1" ];then
 		if [ "$vpnside" = "2" ];then
 			routenum=`ip route|grep tochina|wc -l`
