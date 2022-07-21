@@ -79,10 +79,6 @@ EOF
 }
 
 _checkroute(){
-	for ip in `cat /etc/servers.list`;do
-		ip route add $ip via $NET_GATEWAY >/dev/null 2>&1
-	done
-	
 	if [ "$quagga" = "1" ];then
 		if [ "$vpnside" = "2" ];then
 			routenum=`ip route|grep tochina|wc -l`
@@ -184,11 +180,16 @@ _get_dn_ip(){
 }
 
 _connectvpn(){
+	ip link del vpn-toglobal
+	ip link del vpn-$vpname
 	vpnserver=`uci get myvpn.@myvpn[0].server`
+	vpnserver=`curl -s -A OpenConnect $vpnserver -i -L|grep Location|grep https|tail -1|awk '{print $2}'`
+	vpnport=`echo $vpnserver|awk -F ":" '{print $3}'`
+	vpnserver=`echo $vpnserver|awk -F "https://" '{print $2}'|awk -F ":" '{print $1}'`
 	vpnserverip=$(_get_dn_ip $vpnserver)
 	vpnusername=`uci get myvpn.@myvpn[0].username`
 	vpnpassword=`uci get myvpn.@myvpn[0].password`
-	vpnport=`uci get myvpn.@myvpn[0].port`
+	
 	grep $vpnserver /etc/hosts
 	if [ "$?" = "0" ];then
 		sed -i /$vpnserver/d /etc/hosts
