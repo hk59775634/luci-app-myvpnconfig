@@ -185,7 +185,7 @@ _connectvpn(){
 	vpnserver=`uci get myvpn.@myvpn[0].server`
 	vpnserver=`curl -s -A OpenConnect $vpnserver -i -L|grep Location|grep https|tail -1|awk '{print $2}'`
 	vpnport=`echo $vpnserver|awk -F ":" '{print $3}'`
-	vpnserver=`echo $vpnserver|awk -F "https://" '{print $2}'|awk -F ":" '{print $1}'`
+	vpnserver=`echo $vpnserver|awk -F "https://" '{print $2}'|awk -F ":" '{print $1}'|awk -F "/" '{print $1}'`
 	vpnserverip=$(_get_dn_ip $vpnserver)
 	vpnusername=`uci get myvpn.@myvpn[0].username`
 	vpnpassword=`uci get myvpn.@myvpn[0].password`
