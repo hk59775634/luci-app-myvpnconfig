@@ -58,7 +58,9 @@ cat>/tmp/dnsmasq.tmp<<EOF
 no-resolv
 all-servers
 server=${NET_DNS%% *},0
+server=180.76.76.76,0
 server=1.1.1.1,1
+server=8.8.8.8,1
 chnroutes-file=/etc/chnroute
 
 EOF
@@ -144,7 +146,7 @@ check_ip() {
 _get_dn_ip(){
 	. /usr/share/libubox/jshn.sh
 	domain=$1
-	dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://3.113.145.16:8053/dns-query?name='$domain'&type=A')
+	dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://1.0.0.1/dns-query?name='$domain'&type=A')
 	json_load "$dns_info"
 	json_get_var Status Status
 	if [ "$Status" = "0" ];then
@@ -159,7 +161,7 @@ _get_dn_ip(){
 			json_select ..
 		echo $data
 	else
-		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://1.0.0.1/dns-query?name='$domain'&type=A')
+		dns_info=$(curl -L -s -k --connect-timeout 5 -H 'accept: application/dns-json' 'https://3.113.145.16:8053/dns-query?name='$domain'&type=A')
 		json_load "$dns_info"
 		json_get_var Status Status
 		if [ "$Status" = "0" ];then
